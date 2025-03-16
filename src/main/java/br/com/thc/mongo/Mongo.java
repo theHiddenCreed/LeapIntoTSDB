@@ -19,7 +19,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 @ApplicationScoped
-public class Client {
+public class Mongo {
     private MongoDatabase mongoDatabase;
 
     private static final String MONGODB_CONNECTION_STRING = ConfigProvider.getConfig().getValue("MONGODB_CONNECTION_STRING", String.class);
@@ -40,9 +40,9 @@ public class Client {
             .serverApi(serverApi)
             .build();
 
-        try (MongoClient mongoClient = MongoClients.create(settings)) {
-            this.mongoDatabase = mongoClient.getDatabase(MONGODB_DATABASE);
-        }
+        MongoClient mongoClient = MongoClients.create(settings);
+
+        this.mongoDatabase = mongoClient.getDatabase(MONGODB_DATABASE);
     }
 
     public MongoCollection<Document> getCollection(String name) {
