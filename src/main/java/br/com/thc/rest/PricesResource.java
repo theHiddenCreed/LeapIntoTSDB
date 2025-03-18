@@ -23,7 +23,7 @@ public class PricesResource {
     @Path("/filtro-simples")
     @Produces(MediaType.APPLICATION_JSON)
     public AggregateIterable<Document> filtro() {
-        return mongoService.getResult();
+        return mongoService.filterByDateMetricSymbol();
     }
 
 

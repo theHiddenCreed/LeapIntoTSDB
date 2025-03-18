@@ -1,18 +1,27 @@
 package br.com.thc.service;
 
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.bson.Document;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
 import com.mongodb.client.AggregateIterable;
+import com.mongodb.client.MongoClient;
 
 import br.com.thc.mongo.Mongo;
+import br.com.thc.mongo.Query;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class MongoService {
+
+    private static final String MONGODB_DATABASE = ConfigProvider.getConfig().getValue("MONGODB_DATABASE", String.class);
 
     @Inject
     Mongo mongo;
@@ -20,21 +29,41 @@ public class MongoService {
     @Inject
     Logger log;
 
-    public AggregateIterable<Document> getResult() {
-        AggregateIterable<Document> result = mongo.getCollection("pricesVolume").aggregate(
-            Arrays.asList(new Document("$match", 
-                new Document("metadata.valueType", "close")
-                        .append("metadata.symbol", "BBSA3")
-                        .append("timestamp", 
-                new Document("$gte", 
-                new java.util.Date(1741773600000L))
-                        .append("$lte", 
-                new java.util.Date(1741946700000L))))));
-        
-        log.info(result.explain());
+    public AggregateIterable<Document> filterByDateMetricSymbol() {
 
-        return result;
+        Document filterDate = Query.builder()
+            .addQuery("$gte", new Date(1741773600000L))
+            .addQuery("$lte", new Date(1741946700000L))
+            .build();
+
+        Document filter = Query.builder()
+            .addQuery("metadata.valueType", "close")
+            .addQuery("metadata.symbol", "BBSA3")
+            .addQuery("timestamp", filterDate)
+            .build();
+
+        return mongo.builder()
+            .setDatabase(MONGODB_DATABASE)
+            .setCollection("pricesVolume")
+            .addMatch(filter)
+            .execute();
     }
+
+    // public AggregateIterable<Document> getResult() {
+    //     AggregateIterable<Document> result = mongo.getCollection(MONGODB_DATABASE, "pricesVolume").aggregate(
+    //         Arrays.asList(new Document("$match", 
+    //             new Document("metadata.valueType", "close")
+    //                     .append("metadata.symbol", "BBSA3")
+    //                     .append("timestamp", 
+    //             new Document("$gte", 
+    //             new java.util.Date(1741773600000L))
+    //                     .append("$lte", 
+    //             new java.util.Date(1741946700000L))))));
+        
+    //     log.info(result.explain());
+
+    //     return result;
+    // }
     
     // Arrays.asList(new Document("$match", 
     // new Document("metadata.valueType", "close")

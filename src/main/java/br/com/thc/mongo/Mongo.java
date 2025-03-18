@@ -1,51 +1,85 @@
 package br.com.thc.mongo;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.bson.Document;
 
-import com.mongodb.ConnectionString;
-import com.mongodb.MongoClientSettings;
-import com.mongodb.ServerApi;
-import com.mongodb.ServerApiVersion;
+import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 
-import io.quarkus.runtime.Startup;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.jboss.logging.Logger;
-
 @ApplicationScoped
 public class Mongo {
-    private MongoDatabase mongoDatabase;
+	private PipelineBuilder builder;
 
-    private static final String MONGODB_CONNECTION_STRING = ConfigProvider.getConfig().getValue("MONGODB_CONNECTION_STRING", String.class);
-    private static final String MONGODB_DATABASE = ConfigProvider.getConfig().getValue("MONGODB_DATABASE", String.class);
+	@Inject
+	MongoClient mongoClient;
 
-    @Inject
-    Logger log;
+	public Mongo(PipelineBuilder builder) {
+		this.builder = builder;
+	}
 
-    @Startup
-    public void init() {
+	public PipelineBuilder builder() {
+		return this.builder;
+	}
 
-        ServerApi serverApi = ServerApi.builder()
-            .version(ServerApiVersion.V1)
-            .build();
+	public class PipelineBuilder {
+		private String database;
+		private String collection;
+		private List<Document> pipeline = new ArrayList<>();
 
-        MongoClientSettings settings = MongoClientSettings.builder()
-            .applyConnectionString(new ConnectionString(MONGODB_CONNECTION_STRING))
-            .serverApi(serverApi)
-            .build();
+		public PipelineBuilder setDatabase(String database) {
+			this.database = database;
+			return this;
+		}
 
-        MongoClient mongoClient = MongoClients.create(settings);
+		public PipelineBuilder setCollection(String collection) {
+			this.collection = collection;
+			return this;
+		}
 
-        this.mongoDatabase = mongoClient.getDatabase(MONGODB_DATABASE);
-    }
+		public PipelineBuilder addMatch(Document match) {
+			pipeline.add(new Document("$match", match));
+			return this;
+		}
 
-    public MongoCollection<Document> getCollection(String name) {
-        return this.mongoDatabase.getCollection(name);
-    }
+		public PipelineBuilder addSort(Document sort) {
+			pipeline.add(new Document("$sort", sort));
+			return this;
+		}
+
+		public PipelineBuilder addGroup(Document group) {
+			pipeline.add(new Document("$group", group));
+			return this;
+		}
+
+		public PipelineBuilder addProject(Document project) {
+			pipeline.add(new Document("$project", project));
+			return this;
+		}
+
+		public PipelineBuilder addSet(Document set) {
+			pipeline.add(new Document("$set", set));
+			return this;
+		}
+
+		public PipelineBuilder addUnset(Document unset) {
+			pipeline.add(new Document("$unset", unset));
+			return this;
+		}
+
+		public PipelineBuilder addUnwind(Document unwind) {
+			pipeline.add(new Document("$unwind", unwind));
+			return this;
+		}
+
+		public AggregateIterable<Document> execute() {
+			MongoCollection<Document> mongoCollection = mongoClient.getDatabase(database).getCollection(collection);
+			return mongoCollection.aggregate(pipeline);
+		}
+	}
 }
