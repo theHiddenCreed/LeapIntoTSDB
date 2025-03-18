@@ -19,8 +19,7 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class MongoService {
 
-    private static final String MONGODB_DATABASE = ConfigProvider.getConfig().getValue("MONGODB_DATABASE",
-            String.class);
+    private static final String MONGODB_DATABASE = ConfigProvider.getConfig().getValue("MONGODB_DATABASE", String.class);
 
     private static final String TIMESTAMP = "timestamp";
     private static final String SYMBOL = "metadata.symbol";
