@@ -64,18 +64,18 @@ public class MongoService {
             new Document("symbol", "$" + SYMBOL)
                 .append("day", new Document("$dayOfMonth", "$" + TIMESTAMP))
                 .append("month", new Document("$month", "$" + TIMESTAMP))
-                .append("hour", new Document("$hour", "$" + TIMESTAMP))
-                .append("averageValue", new Document("$avg", "$value"))
-        );
+                .append("hour", new Document("$hour", "$" + TIMESTAMP)))
+            .append("averageValue", new Document("$avg", "$value"))
+            .append("total", new Document("$count", new Document()));
 
-        Document sort = new Document(TIMESTAMP, 1L);
+        Document sort = new Document("_id.hour", 1L);
 
         return MongoPipeline.builder(mongoClient)
             .setDatabase(MONGODB_DATABASE)
             .setCollection(MONGO_COLLECTION)
             .addMatch(filter)
-            .addSort(sort)
             .addGroup(group1)
+            .addSort(sort)
             // .addGroup(group2)
             // .addProject(format)
             .execute(dadosPipeline.getPage(), dadosPipeline.getLimit());
