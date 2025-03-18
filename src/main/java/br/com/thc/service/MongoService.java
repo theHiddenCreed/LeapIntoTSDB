@@ -32,8 +32,8 @@ public class MongoService {
     public AggregateIterable<Document> filterByDateMetricSymbol(DadosPipeline dadosPipeline) throws ParseException {
 
         Document intervalDate = Query.builder()
-            .addQuery("", new Date(convert(dadosPipeline.getStart())))
-            .addQuery("", new Date(convert(dadosPipeline.getEnd())))
+            .addQuery("", date(dadosPipeline.getStart()))
+            .addQuery("", date(dadosPipeline.getEnd()))
             .build();
 
         Document filter = Query.builder()
@@ -57,8 +57,8 @@ public class MongoService {
             
     }
 
-    private long convert(String date) throws ParseException {
-        return DATE_FORMAT.parse(date).getTime();
+    private Date date(String date) throws ParseException {
+        return new Date(DATE_FORMAT.parse(date).getTime());
     }
 
     // public AggregateIterable<Document> getResult() {
