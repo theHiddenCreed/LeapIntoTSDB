@@ -12,7 +12,7 @@ symbols = ['BBAS3', 'ITUB4', 'ITSA4', 'BPAN4', 'BBDC4', 'BPAC11', 'SANB11', 'B3S
 
 FREQUENCY_MINUTES = '1'
 
-RESOLUTION = '1M'
+RESOLUTION = '1D'
 
 to = str(int(datetime.now().timestamp()))
 
