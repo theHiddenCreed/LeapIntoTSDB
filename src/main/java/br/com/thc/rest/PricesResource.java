@@ -3,10 +3,13 @@ package br.com.thc.rest;
 import java.text.ParseException;
 
 import org.bson.Document;
+import org.jboss.logging.Logger;
+import org.jboss.resteasy.reactive.RestQuery;
 
 import com.mongodb.client.AggregateIterable;
 
 import br.com.thc.modelos.DadosPipeline;
+import br.com.thc.modelos.RespostaPipeline;
 import br.com.thc.service.MongoService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -22,10 +25,21 @@ public class PricesResource {
     @Inject
     MongoService mongoService;
 
+    @Inject
+    Logger log;
+
     @GET
-    @Path("/filtro-simples")
     @Produces(MediaType.APPLICATION_JSON)
-    public AggregateIterable<Document> filtro(DadosPipeline dadosPipeline) throws ParseException {
+    public AggregateIterable<Document> filtro(
+        @RestQuery("symbol") String symbol, 
+        @RestQuery("type") String type, 
+        @RestQuery("start") String start, 
+        @RestQuery("end") String end, 
+        @RestQuery("page") int page, 
+        @RestQuery("limit") int limit
+    ) throws ParseException {
+        DadosPipeline dadosPipeline = new DadosPipeline(symbol, type, start, end, limit, page);
+        log.info(dadosPipeline);
         return mongoService.filterByDateMetricSymbol(dadosPipeline);
     }
 

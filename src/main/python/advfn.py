@@ -62,4 +62,4 @@ for i in symbols:
 
     db = Database('LeapIntoTSDBApi')
 
-    db.insert('pricesVolume', format_doc('BBSA3', data.json()))
+    db.insert('stocks', format_doc(i, data.json()))

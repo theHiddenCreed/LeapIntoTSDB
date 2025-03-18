@@ -9,6 +9,8 @@ import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 
+import br.com.thc.modelos.RespostaPipeline;
+
 public class MongoPipeline {
 
 	private MongoPipeline() {}
@@ -21,7 +23,6 @@ public class MongoPipeline {
 		private MongoClient mongoClient;
 		private String database;
 		private String collection;
-		private int limit = 0;
 		private List<Document> pipeline = new ArrayList<>();
 
 		public PipelineBuilder(MongoClient mongoClient) {
@@ -63,17 +64,6 @@ public class MongoPipeline {
 			return this;
 		}
 
-		public PipelineBuilder addLimit(int limit) {
-			this.limit = limit;
-			pipeline.add(new Document("$limit", limit));
-			return this;
-		}
-
-		public PipelineBuilder getPage(int page) {
-			pipeline.add(new Document("$skip", (page - 1) * this.limit));
-			return this;
-		}
-
 		public PipelineBuilder addUnset(String unset) {
 			pipeline.add(new Document("$unset", unset));
 			return this;
@@ -84,8 +74,19 @@ public class MongoPipeline {
 			return this;
 		}
 
-		public AggregateIterable<Document> execute() {
+		// public int count() {
+		// 	List<Document> pipelineCount = new ArrayList<>();
+		// 	pipelineCount.addAll(pipeline);
+		// 	pipelineCount.add(new Document("$count", "total"));
+		// 	AggregateIterable<Document> resultCount = mongoCollection.aggregate(pipelineCount);
+		// }
+
+		public AggregateIterable<Document> execute(int page, int limit) {
 			MongoCollection<Document> mongoCollection = mongoClient.getDatabase(database).getCollection(collection);
+
+			pipeline.add(new Document("$limit", limit));
+			pipeline.add(new Document("$skip", (page - 1) * limit));
+
 			return mongoCollection.aggregate(pipeline);
 		}
 	}

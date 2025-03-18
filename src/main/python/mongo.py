@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-MONGO_CONNECTION_STRING = os.getenv('MONGODB_CONNECTION_STRING')
+MONGO_CONNECTION_STRING = os.getenv('QUARKUS_MONGODB_CONNECTION_STRING')
 
 class Database:
 	'''https://www.mongodb.com/docs/manual/reference/operator/query/'''

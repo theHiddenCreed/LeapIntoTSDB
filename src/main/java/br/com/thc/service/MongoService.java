@@ -12,6 +12,7 @@ import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoClient;
 
 import br.com.thc.modelos.DadosPipeline;
+import br.com.thc.modelos.RespostaPipeline;
 import br.com.thc.mongo.MongoPipeline;
 import br.com.thc.mongo.Query;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -21,7 +22,7 @@ import jakarta.inject.Inject;
 public class MongoService {
 
     private static final String MONGODB_DATABASE = ConfigProvider.getConfig().getValue("MONGODB_DATABASE", String.class);
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-ddTHH:mm");
+    private final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
     @Inject
     MongoClient mongoClient;
@@ -32,9 +33,11 @@ public class MongoService {
     public AggregateIterable<Document> filterByDateMetricSymbol(DadosPipeline dadosPipeline) throws ParseException {
 
         Document intervalDate = Query.builder()
-            .addQuery("", date(dadosPipeline.getStart()))
-            .addQuery("", date(dadosPipeline.getEnd()))
+            .addQuery("$gte", date(dadosPipeline.getStart()))
+            .addQuery("$lte", date(dadosPipeline.getEnd()))
             .build();
+
+        log.info(intervalDate);
 
         Document filter = Query.builder()
             .addQuery("metadata.type", dadosPipeline.getType())
@@ -46,36 +49,21 @@ public class MongoService {
             .addQuery("_id", 0L)
             .build();
 
+        Document sort = Query.builder().addQuery("timestamp", 1).build();
+
         return MongoPipeline.builder(mongoClient)
             .setDatabase(MONGODB_DATABASE)
             .setCollection("pricesVolume")
             .addMatch(filter)
+            .addSort(sort)
             .addProject(format)
-            .addLimit(dadosPipeline.getLimit())
-            .getPage(dadosPipeline.getPage())
-            .execute();
+            .execute(dadosPipeline.getPage(), dadosPipeline.getLimit());
             
     }
 
     private Date date(String date) throws ParseException {
         return new Date(DATE_FORMAT.parse(date).getTime());
     }
-
-    // public AggregateIterable<Document> getResult() {
-    //     AggregateIterable<Document> result = mongo.getCollection(MONGODB_DATABASE, "pricesVolume").aggregate(
-    //         Arrays.asList(new Document("$match", 
-    //             new Document("metadata.valueType", "close")
-    //                     .append("metadata.symbol", "BBSA3")
-    //                     .append("timestamp", 
-    //             new Document("$gte", 
-    //             new java.util.Date(1741773600000L))
-    //                     .append("$lte", 
-    //             new java.util.Date(1741946700000L))))));
-        
-    //     log.info(result.explain());
-
-    //     return result;
-    // }
     
     // Arrays.asList(new Document("$match", 
     // new Document("metadata.valueType", "close")

@@ -19,6 +19,18 @@ public class DadosPipeline {
         this.page = page;
     }
 
+    @Override
+    public String toString() {
+        return "DadosPipeline{" +
+                "symbol='" + symbol + '\'' +
+                ", type='" + type + '\'' +
+                ", start='" + start + '\'' +
+                ", end='" + end + '\'' +
+                ", limit=" + limit +
+                ", page=" + page +
+                '}';
+    }
+
     public String getType() {
         return this.type;
     }
