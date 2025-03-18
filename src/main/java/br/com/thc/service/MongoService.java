@@ -39,8 +39,7 @@ public class MongoService {
 
         Document filter = new Document(TYPE, dadosPipeline.getType())
                 .append(SYMBOL, dadosPipeline.getSymbol())
-                .append(TIMESTAMP, new Document("$gte", date(dadosPipeline.getStart())).append("$lte",
-                        date(dadosPipeline.getEnd())));
+                .append(TIMESTAMP, new Document("$gte", date(dadosPipeline.getStart())).append("$lte", date(dadosPipeline.getEnd())));
 
         Document format = new Document("_id", 0L);
 
