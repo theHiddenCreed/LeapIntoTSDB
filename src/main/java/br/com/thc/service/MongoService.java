@@ -1,5 +1,7 @@
 package br.com.thc.service;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.bson.Document;
@@ -9,6 +11,7 @@ import org.jboss.logging.Logger;
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoClient;
 
+import br.com.thc.modelos.DadosPipeline;
 import br.com.thc.mongo.MongoPipeline;
 import br.com.thc.mongo.Query;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -18,6 +21,7 @@ import jakarta.inject.Inject;
 public class MongoService {
 
     private static final String MONGODB_DATABASE = ConfigProvider.getConfig().getValue("MONGODB_DATABASE", String.class);
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-ddTHH:mm");
 
     @Inject
     MongoClient mongoClient;
@@ -25,16 +29,16 @@ public class MongoService {
     @Inject
     Logger log;
 
-    public AggregateIterable<Document> filterByDateMetricSymbol() {
+    public AggregateIterable<Document> filterByDateMetricSymbol(DadosPipeline dadosPipeline) throws ParseException {
 
         Document intervalDate = Query.builder()
-            .addQuery("$gte", new Date(1741773600000L))
-            .addQuery("$lte", new Date(1741773900000L))
+            .addQuery("", new Date(convert(dadosPipeline.getStart())))
+            .addQuery("", new Date(convert(dadosPipeline.getEnd())))
             .build();
 
         Document filter = Query.builder()
-            .addQuery("metadata.valueType", "close")
-            .addQuery("metadata.symbol", "BBSA3")
+            .addQuery("metadata.type", dadosPipeline.getType())
+            .addQuery("metadata.symbol", dadosPipeline.getSymbol())
             .addQuery("timestamp", intervalDate)
             .build();
 
@@ -47,10 +51,14 @@ public class MongoService {
             .setCollection("pricesVolume")
             .addMatch(filter)
             .addProject(format)
-            .addLimit(10)
-            .getPage(1)
+            .addLimit(dadosPipeline.getLimit())
+            .getPage(dadosPipeline.getPage())
             .execute();
             
+    }
+
+    private long convert(String date) throws ParseException {
+        return DATE_FORMAT.parse(date).getTime();
     }
 
     // public AggregateIterable<Document> getResult() {

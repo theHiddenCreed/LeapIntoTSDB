@@ -40,7 +40,7 @@ def format_doc(symbol: str, data: dict):
                             'timestamp': datetime.fromtimestamp(i[0]),
                             'metadata': {
                                 'symbol': symbol,
-                                'valueType': k[0]
+                                'type': k[0]
                             },
                             'value': k[1]
                         }

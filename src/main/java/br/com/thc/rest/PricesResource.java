@@ -1,9 +1,12 @@
 package br.com.thc.rest;
 
+import java.text.ParseException;
+
 import org.bson.Document;
 
 import com.mongodb.client.AggregateIterable;
 
+import br.com.thc.modelos.DadosPipeline;
 import br.com.thc.service.MongoService;
 import jakarta.enterprise.context.RequestScoped;
 import jakarta.inject.Inject;
@@ -22,8 +25,8 @@ public class PricesResource {
     @GET
     @Path("/filtro-simples")
     @Produces(MediaType.APPLICATION_JSON)
-    public AggregateIterable<Document> filtro() {
-        return mongoService.filterByDateMetricSymbol();
+    public AggregateIterable<Document> filtro(DadosPipeline dadosPipeline) throws ParseException {
+        return mongoService.filterByDateMetricSymbol(dadosPipeline);
     }
 
 
