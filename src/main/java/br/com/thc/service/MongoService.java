@@ -160,7 +160,9 @@ public class MongoService {
 
     private Date date(String date) throws ParseException {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-        return new Date(dateFormat.parse(date).getTime());
+        long epochTime = dateFormat.parse(date).getTime() - 10800000L;
+        log.info(epochTime);
+        return new Date(epochTime);
     }
     
     // Arrays.asList(new Document("$match", 
