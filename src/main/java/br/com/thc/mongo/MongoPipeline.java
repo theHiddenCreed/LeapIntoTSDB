@@ -18,7 +18,6 @@ public class MongoPipeline {
 	public static PipelineBuilder builder(MongoClient client) {
 		return new PipelineBuilder(client);
 	}
-
 	public static class PipelineBuilder {
 		private MongoClient mongoClient;
 		private String database;

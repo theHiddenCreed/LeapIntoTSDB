@@ -13,8 +13,6 @@ import com.mongodb.client.MongoClient;
 import br.com.thc.modelos.DadosEntradaPipeline;
 import br.com.thc.modelos.DadosSaidaPipeline;
 import br.com.thc.mongo.MongoPipeline;
-import br.com.thc.mongo.Query;
-import io.vertx.codegen.doc.Doc;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -22,6 +20,12 @@ import jakarta.inject.Inject;
 public class MongoService {
 
     private static final String MONGODB_DATABASE = ConfigProvider.getConfig().getValue("MONGODB_DATABASE", String.class);
+
+    private static final String TIMESTAMP = "timestamp";
+    private static final String SYMBOL = "metadata.symbol";
+    private static final String TYPE = "metadata.type";
+
+    private static final String MONGO_COLLECTION = "stocks";
 
     @Inject
     MongoClient mongoClient;
@@ -31,26 +35,17 @@ public class MongoService {
 
     public DadosSaidaPipeline filterByDateMetricSymbol(DadosEntradaPipeline dadosPipeline) throws ParseException {
 
-        Document intervalDate = Query.builder()
-            .addQuery("$gte", date(dadosPipeline.getStart()))
-            .addQuery("$lte", date(dadosPipeline.getEnd()))
-            .build();
+        Document filter = new Document(TYPE, dadosPipeline.getType())
+            .append(SYMBOL, dadosPipeline.getSymbol())
+            .append(TIMESTAMP, new Document("$gte", date(dadosPipeline.getStart())).append("$lte", date(dadosPipeline.getEnd())));
 
-        Document filter = Query.builder()
-            .addQuery("metadata.type", dadosPipeline.getType())
-            .addQuery("metadata.symbol", dadosPipeline.getSymbol())
-            .addQuery("timestamp", intervalDate)
-            .build();
+        Document format = new Document("_id", 0L);
 
-        Document format = Query.builder()
-            .addQuery("_id", 0L)
-            .build();
-
-        Document sort = Query.builder().addQuery("timestamp", 1L).build();
+        Document sort = new Document(TIMESTAMP, 1L);
 
         return MongoPipeline.builder(mongoClient)
             .setDatabase(MONGODB_DATABASE)
-            .setCollection("stocks")
+            .setCollection(MONGO_COLLECTION)
             .addMatch(filter)
             .addSort(sort)
             .addProject(format)
@@ -58,81 +53,81 @@ public class MongoService {
             
     }
 
-    public DadosSaidaPipeline filterCalcDiff(DadosEntradaPipeline dadosPipeline) throws ParseException {
+    // public DadosSaidaPipeline filterCalcDiff(DadosEntradaPipeline dadosPipeline) throws ParseException {
 
-        Document intervalDate = Query.builder()
-            .addQuery("$gte", date(dadosPipeline.getStart()))
-            .addQuery("$lte", date(dadosPipeline.getEnd()))
-            .build();
+    //     Document intervalDate = Query.builder()
+    //         .addQuery("$gte", date(dadosPipeline.getStart()))
+    //         .addQuery("$lte", date(dadosPipeline.getEnd()))
+    //         .build();
 
-        Document filter = Query.builder()
-            .addQuery("metadata.type", dadosPipeline.getType())
-            .addQuery("metadata.symbol", dadosPipeline.getSymbol())
-            .addQuery("timestamp", intervalDate)
-            .build();
+    //     Document filter = Query.builder()
+    //         .addQuery("metadata.type", dadosPipeline.getType())
+    //         .addQuery("metadata.symbol", dadosPipeline.getSymbol())
+    //         .addQuery("timestamp", intervalDate)
+    //         .build();
 
-        Document hourParams = Query.builder()
-            .addQuery("$hour", "$timestamp")
-            .addQuery("$dayOfMonth", "$timestamp")
-            .build();
+    //     Document hourParams = Query.builder()
+    //         .addQuery("$hour", "$timestamp")
+    //         .addQuery("$dayOfMonth", "$timestamp")
+    //         .build();
 
-        Document pushParams = Query.builder()
-            .addQuery("timestamp", "$timestamp")
-            .addQuery("value", "$value")
-            .build();
+    //     Document pushParams = Query.builder()
+    //         .addQuery("timestamp", "$timestamp")
+    //         .addQuery("value", "$value")
+    //         .build();
 
-        Document valuesParams = Query.builder()
-            .addQuery("$push", pushParams)
-            .build();
+    //     Document valuesParams = Query.builder()
+    //         .addQuery("$push", pushParams)
+    //         .build();
 
-        Document averageParams = Query.builder()
-            .addQuery("$avg", "$value")
-            .addQuery("values", valuesParams)
-            .build();
+    //     Document averageParams = Query.builder()
+    //         .addQuery("$avg", "$value")
+    //         .addQuery("values", valuesParams)
+    //         .build();
 
-        Document groupsParams = Query.builder()
-            .addQuery("symbol", "$metadata.symbol")
-            .addQuery("hour", hourParams)
-            .addQuery("averageValue", averageParams)
-            .build();
+    //     Document groupsParams = Query.builder()
+    //         .addQuery("symbol", "$metadata.symbol")
+    //         .addQuery("hour", hourParams)
+    //         .addQuery("averageValue", averageParams)
+    //         .build();
 
-        Document groups = Query.builder()
-            .addQuery("_id", groupsParams)
-            .build();
+    //     Document groups = Query.builder()
+    //         .addQuery("_id", groupsParams)
+    //         .build();
 
-        Document pushParams2 = Query.builder()
-            .addQuery("hour", "$_id.hour")
-            .addQuery("day", "$_id.day")
-            .addQuery("avgValue", "$averageValue")
-            .addQuery("values", "$values")
-            .build();
+    //     Document pushParams2 = Query.builder()
+    //         .addQuery("hour", "$_id.hour")
+    //         .addQuery("day", "$_id.day")
+    //         .addQuery("avgValue", "$averageValue")
+    //         .addQuery("values", "$values")
+    //         .build();
 
-        Document hourlyAveragesParams = Query.builder()
-            .addQuery("$push", pushParams2)
-            .build();
+    //     Document hourlyAveragesParams = Query.builder()
+    //         .addQuery("$push", pushParams2)
+    //         .build();
 
-        Document groups2 = Query.builder()
-            .addQuery("_id", "$_id.symbol")
-            .addQuery("hourlyAverages", hourlyAveragesParams)
-            .build();
+    //     Document groups2 = Query.builder()
+    //         .addQuery("_id", "$_id.symbol")
+    //         .addQuery("hourlyAverages", hourlyAveragesParams)
+    //         .build();
 
-        Document format = Query.builder()
-            .addQuery("_id", 0L)
-            .build();
+    //     Document format = Query.builder()
+    //         .addQuery("_id", 0L)
+    //         .build();
 
-        Document sort = Query.builder().addQuery("timestamp", 1L).build();
+    //     Document sort = Query.builder().addQuery("timestamp", 1L).build();
 
-        return MongoPipeline.builder(mongoClient)
-            .setDatabase(MONGODB_DATABASE)
-            .setCollection("stocks")
-            .addMatch(filter)
-            .addSort(sort)
-            .addGroup(groups)
-            .addGroup(groups2)
-            .addProject(format)
-            .execute(dadosPipeline.getPage(), dadosPipeline.getLimit());
+    //     return MongoPipeline.builder(mongoClient)
+    //         .setDatabase(MONGODB_DATABASE)
+    //         .setCollection("stocks")
+    //         .addMatch(filter)
+    //         .addSort(sort)
+    //         .addGroup(groups)
+    //         .addGroup(groups2)
+    //         .addProject(format)
+    //         .execute(dadosPipeline.getPage(), dadosPipeline.getLimit());
             
-    }
+    // }
 
 //     new Document("$project", 
 //     new Document("symbol", "$_id")
