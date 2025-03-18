@@ -8,11 +8,10 @@ import org.bson.Document;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.jboss.logging.Logger;
 
-import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoClient;
 
-import br.com.thc.modelos.DadosPipeline;
-import br.com.thc.modelos.RespostaPipeline;
+import br.com.thc.modelos.DadosEntradaPipeline;
+import br.com.thc.modelos.DadosSaidaPipeline;
 import br.com.thc.mongo.MongoPipeline;
 import br.com.thc.mongo.Query;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -22,7 +21,6 @@ import jakarta.inject.Inject;
 public class MongoService {
 
     private static final String MONGODB_DATABASE = ConfigProvider.getConfig().getValue("MONGODB_DATABASE", String.class);
-    private final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
     @Inject
     MongoClient mongoClient;
@@ -30,14 +28,12 @@ public class MongoService {
     @Inject
     Logger log;
 
-    public AggregateIterable<Document> filterByDateMetricSymbol(DadosPipeline dadosPipeline) throws ParseException {
+    public DadosSaidaPipeline filterByDateMetricSymbol(DadosEntradaPipeline dadosPipeline) throws ParseException {
 
         Document intervalDate = Query.builder()
             .addQuery("$gte", date(dadosPipeline.getStart()))
             .addQuery("$lte", date(dadosPipeline.getEnd()))
             .build();
-
-        log.info(intervalDate);
 
         Document filter = Query.builder()
             .addQuery("metadata.type", dadosPipeline.getType())
@@ -49,11 +45,11 @@ public class MongoService {
             .addQuery("_id", 0L)
             .build();
 
-        Document sort = Query.builder().addQuery("timestamp", 1).build();
+        Document sort = Query.builder().addQuery("timestamp", 1L).build();
 
         return MongoPipeline.builder(mongoClient)
             .setDatabase(MONGODB_DATABASE)
-            .setCollection("pricesVolume")
+            .setCollection("stocks")
             .addMatch(filter)
             .addSort(sort)
             .addProject(format)
@@ -62,7 +58,8 @@ public class MongoService {
     }
 
     private Date date(String date) throws ParseException {
-        return new Date(DATE_FORMAT.parse(date).getTime());
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+        return new Date(dateFormat.parse(date).getTime());
     }
     
     // Arrays.asList(new Document("$match", 

@@ -1,6 +1,6 @@
 package br.com.thc.modelos;
 
-public class DadosPipeline {
+public class DadosEntradaPipeline {
     private String symbol;
     private String type;
     private String start;
@@ -8,9 +8,9 @@ public class DadosPipeline {
     private int limit;
     private int page;
 
-    public DadosPipeline() {}
+    public DadosEntradaPipeline() {}
 
-    public DadosPipeline(String symbol, String type, String start, String end, int limit, int page) {
+    public DadosEntradaPipeline(String symbol, String type, String start, String end, int limit, int page) {
         this.symbol = symbol;
         this.type = type;
         this.start = start;

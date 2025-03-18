@@ -1,6 +1,7 @@
 package br.com.thc.mongo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.bson.Document;
@@ -9,7 +10,7 @@ import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 
-import br.com.thc.modelos.RespostaPipeline;
+import br.com.thc.modelos.DadosSaidaPipeline;
 
 public class MongoPipeline {
 
@@ -74,20 +75,38 @@ public class MongoPipeline {
 			return this;
 		}
 
-		// public int count() {
-		// 	List<Document> pipelineCount = new ArrayList<>();
-		// 	pipelineCount.addAll(pipeline);
-		// 	pipelineCount.add(new Document("$count", "total"));
-		// 	AggregateIterable<Document> resultCount = mongoCollection.aggregate(pipelineCount);
-		// }
-
-		public AggregateIterable<Document> execute(int page, int limit) {
+		public DadosSaidaPipeline execute(int page, int limit) {
 			MongoCollection<Document> mongoCollection = mongoClient.getDatabase(database).getCollection(collection);
 
-			pipeline.add(new Document("$limit", limit));
-			pipeline.add(new Document("$skip", (page - 1) * limit));
+			List<Document> pipelineCount = new ArrayList<>();
+			pipelineCount.addAll(pipeline);
+			pipelineCount.add(new Document("$count", "total"));
+			AggregateIterable<Document> resultCount = mongoCollection.aggregate(pipelineCount);
+			int total = resultCount.first().getInteger("total");
 
-			return mongoCollection.aggregate(pipeline);
+			if (limit > 100) {
+				throw new LimiteExcedidoException("Limite excedido, valor recomendado é 100.");
+			} 
+
+			if (limit > total) {
+				pipeline.add(new Document("$limit", total));
+				pipeline.add(new Document("$skip", 0 * limit));
+			} else {
+				pipeline.add(new Document("$limit", limit));
+				pipeline.add(new Document("$skip", (page - 1) * limit));
+			}
+
+			AggregateIterable<Document> result = mongoCollection.aggregate(pipeline);
+			List<Document> documents = new ArrayList<>();
+			result.forEach(documents::add);
+
+			return new DadosSaidaPipeline(total, page, documents);
+		}
+	}
+
+	public static class LimiteExcedidoException extends RuntimeException {
+		public LimiteExcedidoException(String message) {
+			super(message);
 		}
 	}
 }

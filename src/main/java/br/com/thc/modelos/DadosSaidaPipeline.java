@@ -1,15 +1,15 @@
 package br.com.thc.modelos;
 
+import java.util.List;
+
 import org.bson.Document;
 
-import com.mongodb.client.AggregateIterable;
-
-public class RespostaPipeline {
+public class DadosSaidaPipeline {
     private int total;
     private int page;
-    private AggregateIterable<Document> docs;
+    private List<Document> docs;
 
-    public RespostaPipeline(int total, int page, AggregateIterable<Document> docs) {
+    public DadosSaidaPipeline(int total, int page, List<Document> docs) {
         this.total = total;
         this.page = page;
         this.docs = docs;
@@ -23,7 +23,7 @@ public class RespostaPipeline {
         return this.page;
     }
 
-    public AggregateIterable<Document> getDocs() {
+    public List<Document> getDocs() {
         return this.docs;
     }
     
