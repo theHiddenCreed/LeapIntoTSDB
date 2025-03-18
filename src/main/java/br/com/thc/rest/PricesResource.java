@@ -26,6 +26,7 @@ public class PricesResource {
     Logger log;
 
     @GET
+    @Path("bruto")
     @Produces(MediaType.APPLICATION_JSON)
     public DadosSaidaPipeline filtro(
         @RestQuery("symbol") String symbol, 
@@ -38,6 +39,22 @@ public class PricesResource {
         DadosEntradaPipeline dadosPipeline = new DadosEntradaPipeline(symbol, type, start, end, limit, page);
         log.info(dadosPipeline);
         return mongoService.filterByDateMetricSymbol(dadosPipeline);
+    }
+
+    @GET
+    @Path("/diferencas")
+    @Produces(MediaType.APPLICATION_JSON)
+    public DadosSaidaPipeline diff(
+        @RestQuery("symbol") String symbol, 
+        @RestQuery("type") String type, 
+        @RestQuery("start") String start, 
+        @RestQuery("end") String end, 
+        @RestQuery("page") int page, 
+        @RestQuery("limit") int limit
+    ) throws ParseException {
+        DadosEntradaPipeline dadosPipeline = new DadosEntradaPipeline(symbol, type, start, end, limit, page);
+        log.info(dadosPipeline);
+        return mongoService.filterCalcDiff(dadosPipeline);
     }
 
 }
