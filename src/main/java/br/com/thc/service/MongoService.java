@@ -14,6 +14,7 @@ import br.com.thc.modelos.DadosEntradaPipeline;
 import br.com.thc.modelos.DadosSaidaPipeline;
 import br.com.thc.mongo.MongoPipeline;
 import br.com.thc.mongo.Query;
+import io.vertx.codegen.doc.Doc;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -56,6 +57,111 @@ public class MongoService {
             .execute(dadosPipeline.getPage(), dadosPipeline.getLimit());
             
     }
+
+    public DadosSaidaPipeline filterCalcDiff(DadosEntradaPipeline dadosPipeline) throws ParseException {
+
+        Document intervalDate = Query.builder()
+            .addQuery("$gte", date(dadosPipeline.getStart()))
+            .addQuery("$lte", date(dadosPipeline.getEnd()))
+            .build();
+
+        Document filter = Query.builder()
+            .addQuery("metadata.type", dadosPipeline.getType())
+            .addQuery("metadata.symbol", dadosPipeline.getSymbol())
+            .addQuery("timestamp", intervalDate)
+            .build();
+
+        Document hourParams = Query.builder()
+            .addQuery("$hour", "$timestamp")
+            .addQuery("$dayOfMonth", "$timestamp")
+            .build();
+
+        Document pushParams = Query.builder()
+            .addQuery("timestamp", "$timestamp")
+            .addQuery("value", "$value")
+            .build();
+
+        Document valuesParams = Query.builder()
+            .addQuery("$push", pushParams)
+            .build();
+
+        Document averageParams = Query.builder()
+            .addQuery("$avg", "$value")
+            .addQuery("values", valuesParams)
+            .build();
+
+        Document groupsParams = Query.builder()
+            .addQuery("symbol", "$metadata.symbol")
+            .addQuery("hour", hourParams)
+            .addQuery("averageValue", averageParams)
+            .build();
+
+        Document groups = Query.builder()
+            .addQuery("_id", groupsParams)
+            .build();
+
+        Document pushParams2 = Query.builder()
+            .addQuery("hour", "$_id.hour")
+            .addQuery("day", "$_id.day")
+            .addQuery("avgValue", "$averageValue")
+            .addQuery("values", "$values")
+            .build();
+
+        Document hourlyAveragesParams = Query.builder()
+            .addQuery("$push", pushParams2)
+            .build();
+
+        Document groups2 = Query.builder()
+            .addQuery("_id", "$_id.symbol")
+            .addQuery("hourlyAverages", hourlyAveragesParams)
+            .build();
+
+        Document format = Query.builder()
+            .addQuery("_id", 0L)
+            .build();
+
+        Document sort = Query.builder().addQuery("timestamp", 1L).build();
+
+        return MongoPipeline.builder(mongoClient)
+            .setDatabase(MONGODB_DATABASE)
+            .setCollection("stocks")
+            .addMatch(filter)
+            .addSort(sort)
+            .addGroup(groups)
+            .addGroup(groups2)
+            .addProject(format)
+            .execute(dadosPipeline.getPage(), dadosPipeline.getLimit());
+            
+    }
+
+//     new Document("$project", 
+//     new Document("symbol", "$_id")
+//             .append("differences", 
+//     new Document("$map", 
+//     new Document("input", 
+//     new Document("$range", Arrays.asList(1L, 
+//                             new Document("$size", "$hourlyAverages"))))
+//                     .append("as", "idx")
+//                     .append("in", 
+//     new Document("$let", 
+//     new Document("vars", 
+//     new Document("current", 
+//     new Document("$arrayElemAt", Arrays.asList("$hourlyAverages", "$$idx")))
+//                                 .append("previous", 
+//     new Document("$arrayElemAt", Arrays.asList("$hourlyAverages", 
+//                                         new Document("$subtract", Arrays.asList("$$idx", 1L))))))
+//                             .append("in", 
+//     new Document("timestamp", 
+//     new Document("$arrayElemAt", Arrays.asList("$$current.values.timestamp", 0L)))
+//                                 .append("symbol", "$symbol")
+//                                 .append("diffAvg", 
+//     new Document("$subtract", Arrays.asList("$$current.avgValue", "$$previous.avgValue"))))))))), 
+//     new Document("$unwind", "$differences"), 
+//     new Document("$project", 
+//     new Document("_id", 0L)
+//             .append("timestamp", "$differences.timestamp")
+//             .append("symbol", "$differences.symbol")
+//             .append("diffAvg", "$differences.diffAvg")))
 
     private Date date(String date) throws ParseException {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
@@ -184,63 +290,6 @@ public class MongoService {
 //             .append("symbol", "$_id.symbol")), 
 //     new Document("$unset", "_id"))
 
-// Arrays.asList(new Document("$match", 
-//     new Document("metadata.valueType", "close")
-//             .append("timestamp", 
-//     new Document("$gte", 
-//     new java.util.Date(1741737600000L))
-//                 .append("$lt", 
-//     new java.util.Date(1741910400000L)))), 
-//     new Document("$sort", 
-//     new Document("timestamp", 1L)), 
-//     new Document("$group", 
-//     new Document("_id", 
-//     new Document("symbol", "$metadata.symbol")
-//                 .append("hour", 
-//     new Document("$hour", "$timestamp"))
-//                 .append("day", 
-//     new Document("$dayOfMonth", "$timestamp")))
-//             .append("averageValue", 
-//     new Document("$avg", "$value"))
-//             .append("values", 
-//     new Document("$push", 
-//     new Document("timestamp", "$timestamp")
-//                     .append("value", "$value")))), 
-//     new Document("$group", 
-//     new Document("_id", "$_id.symbol")
-//             .append("hourlyAverages", 
-//     new Document("$push", 
-//     new Document("hour", "$_id.hour")
-//                     .append("day", "$_id.day")
-//                     .append("avgValue", "$averageValue")
-//                     .append("values", "$values")))), 
-//     new Document("$project", 
-//     new Document("symbol", "$_id")
-//             .append("differences", 
-//     new Document("$map", 
-//     new Document("input", 
-//     new Document("$range", Arrays.asList(1L, 
-//                             new Document("$size", "$hourlyAverages"))))
-//                     .append("as", "idx")
-//                     .append("in", 
-//     new Document("$let", 
-//     new Document("vars", 
-//     new Document("current", 
-//     new Document("$arrayElemAt", Arrays.asList("$hourlyAverages", "$$idx")))
-//                                 .append("previous", 
-//     new Document("$arrayElemAt", Arrays.asList("$hourlyAverages", 
-//                                         new Document("$subtract", Arrays.asList("$$idx", 1L))))))
-//                             .append("in", 
-//     new Document("timestamp", 
-//     new Document("$arrayElemAt", Arrays.asList("$$current.values.timestamp", 0L)))
-//                                 .append("symbol", "$symbol")
-//                                 .append("diffAvg", 
-//     new Document("$subtract", Arrays.asList("$$current.avgValue", "$$previous.avgValue"))))))))), 
-//     new Document("$unwind", "$differences"), 
-//     new Document("$project", 
-//     new Document("_id", 0L)
-//             .append("timestamp", "$differences.timestamp")
-//             .append("symbol", "$differences.symbol")
-//             .append("diffAvg", "$differences.diffAvg")))
+
 
 }

@@ -88,18 +88,24 @@ public class MongoPipeline {
 			} 
 
 			if (limit > total) {
-				pipeline.add(new Document("$limit", total));
 				pipeline.add(new Document("$skip", 0 * limit));
+				pipeline.add(new Document("$limit", total));
+
+				AggregateIterable<Document> result = mongoCollection.aggregate(pipeline);
+				List<Document> documents = new ArrayList<>();
+				result.forEach(documents::add);
+	
+				return new DadosSaidaPipeline(total, 0, documents);
 			} else {
-				pipeline.add(new Document("$limit", limit));
 				pipeline.add(new Document("$skip", (page - 1) * limit));
+				pipeline.add(new Document("$limit", limit));
+
+				AggregateIterable<Document> result = mongoCollection.aggregate(pipeline);
+				List<Document> documents = new ArrayList<>();
+				result.forEach(documents::add);
+	
+				return new DadosSaidaPipeline(total, page, documents);
 			}
-
-			AggregateIterable<Document> result = mongoCollection.aggregate(pipeline);
-			List<Document> documents = new ArrayList<>();
-			result.forEach(documents::add);
-
-			return new DadosSaidaPipeline(total, page, documents);
 		}
 	}
 
