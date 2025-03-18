@@ -1,10 +1,6 @@
 package br.com.thc.service;
 
-import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import org.bson.Document;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -13,7 +9,7 @@ import org.jboss.logging.Logger;
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoClient;
 
-import br.com.thc.mongo.Mongo;
+import br.com.thc.mongo.MongoPipeline;
 import br.com.thc.mongo.Query;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -24,29 +20,37 @@ public class MongoService {
     private static final String MONGODB_DATABASE = ConfigProvider.getConfig().getValue("MONGODB_DATABASE", String.class);
 
     @Inject
-    Mongo mongo;
+    MongoClient mongoClient;
 
     @Inject
     Logger log;
 
     public AggregateIterable<Document> filterByDateMetricSymbol() {
 
-        Document filterDate = Query.builder()
+        Document intervalDate = Query.builder()
             .addQuery("$gte", new Date(1741773600000L))
-            .addQuery("$lte", new Date(1741946700000L))
+            .addQuery("$lte", new Date(1741773900000L))
             .build();
 
         Document filter = Query.builder()
             .addQuery("metadata.valueType", "close")
             .addQuery("metadata.symbol", "BBSA3")
-            .addQuery("timestamp", filterDate)
+            .addQuery("timestamp", intervalDate)
             .build();
 
-        return mongo.builder()
+        Document format = Query.builder()
+            .addQuery("_id", 0L)
+            .build();
+
+        return MongoPipeline.builder(mongoClient)
             .setDatabase(MONGODB_DATABASE)
             .setCollection("pricesVolume")
             .addMatch(filter)
+            .addProject(format)
+            .addLimit(10)
+            .getPage(1)
             .execute();
+            
     }
 
     // public AggregateIterable<Document> getResult() {
@@ -73,6 +77,7 @@ public class MongoService {
     // new java.util.Date(1741737600000L))
     //             .append("$lt", 
     // new java.util.Date(1741910400000L)))), 
+
     // new Document("$group", 
     // new Document("_id", 
     // new Document("year", 
@@ -87,6 +92,7 @@ public class MongoService {
     // new Document("$push", "$value"))
     //         .append("maxValue", 
     // new Document("$max", "$value"))), 
+    
     // new Document("$project", 
     // new Document("_id", 0L)
     //         .append("timestamp", 

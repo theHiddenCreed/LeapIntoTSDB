@@ -9,28 +9,24 @@ import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 
-import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
+public class MongoPipeline {
 
-@ApplicationScoped
-public class Mongo {
-	private PipelineBuilder builder;
+	private MongoPipeline() {}
 
-	@Inject
-	MongoClient mongoClient;
-
-	public Mongo(PipelineBuilder builder) {
-		this.builder = builder;
+	public static PipelineBuilder builder(MongoClient client) {
+		return new PipelineBuilder(client);
 	}
 
-	public PipelineBuilder builder() {
-		return this.builder;
-	}
-
-	public class PipelineBuilder {
+	public static class PipelineBuilder {
+		private MongoClient mongoClient;
 		private String database;
 		private String collection;
+		private int limit = 0;
 		private List<Document> pipeline = new ArrayList<>();
+
+		public PipelineBuilder(MongoClient mongoClient) {
+			this.mongoClient = mongoClient;
+		}
 
 		public PipelineBuilder setDatabase(String database) {
 			this.database = database;
@@ -67,7 +63,18 @@ public class Mongo {
 			return this;
 		}
 
-		public PipelineBuilder addUnset(Document unset) {
+		public PipelineBuilder addLimit(int limit) {
+			this.limit = limit;
+			pipeline.add(new Document("$limit", limit));
+			return this;
+		}
+
+		public PipelineBuilder getPage(int page) {
+			pipeline.add(new Document("$skip", (page - 1) * this.limit));
+			return this;
+		}
+
+		public PipelineBuilder addUnset(String unset) {
 			pipeline.add(new Document("$unset", unset));
 			return this;
 		}
