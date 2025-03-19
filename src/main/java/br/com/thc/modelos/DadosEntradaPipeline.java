@@ -7,16 +7,20 @@ public class DadosEntradaPipeline {
     private String end;
     private int limit;
     private int page;
+    private String gran;
+    private int bin;
 
     public DadosEntradaPipeline() {}
 
-    public DadosEntradaPipeline(String symbol, String type, String start, String end, int limit, int page) {
+    public DadosEntradaPipeline(String symbol, String type, String start, String end, int limit, int page, String gran, int bin) {
         this.symbol = symbol;
         this.type = type;
         this.start = start;
         this.end = end;
         this.limit = limit;
         this.page = page;
+        this.gran = gran;
+        this.bin = bin;
     }
 
     @Override
@@ -28,6 +32,8 @@ public class DadosEntradaPipeline {
                 ", end='" + end + '\'' +
                 ", limit=" + limit +
                 ", page=" + page +
+                ", gran=" + gran +
+                ", bin=" + bin +
                 '}';
     }
 
@@ -77,5 +83,21 @@ public class DadosEntradaPipeline {
 
     public String getSymbol() {
         return this.symbol;
+    }
+
+    public String getGran() {
+        return gran;
+    }
+
+    public void setGran(String gran) {
+        this.gran = gran;
+    }
+
+    public int getBin() {
+        return bin;
+    }
+
+    public void setBin(int bin) {
+        this.bin = bin;
     }
 }

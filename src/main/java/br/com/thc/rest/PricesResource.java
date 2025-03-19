@@ -36,7 +36,7 @@ public class PricesResource {
         @RestQuery("page") int page, 
         @RestQuery("limit") int limit
     ) throws ParseException {
-        DadosEntradaPipeline dadosPipeline = new DadosEntradaPipeline(symbol, type, start, end, limit, page);
+        DadosEntradaPipeline dadosPipeline = new DadosEntradaPipeline(symbol, type, start, end, limit, page, "", 0);
         log.info(dadosPipeline);
         return mongoService.filterByDateMetricSymbol(dadosPipeline);
     }
@@ -50,9 +50,11 @@ public class PricesResource {
         @RestQuery("start") String start, 
         @RestQuery("end") String end, 
         @RestQuery("page") int page, 
-        @RestQuery("limit") int limit
+        @RestQuery("limit") int limit,
+        @RestQuery("gran") String gran,
+        @RestQuery("bin") int bin
     ) throws ParseException {
-        DadosEntradaPipeline dadosPipeline = new DadosEntradaPipeline(symbol, type, start, end, limit, page);
+        DadosEntradaPipeline dadosPipeline = new DadosEntradaPipeline(symbol, type, start, end, limit, page, gran, bin);
         log.info(dadosPipeline);
         return mongoService.filterCalcDiff(dadosPipeline);
     }

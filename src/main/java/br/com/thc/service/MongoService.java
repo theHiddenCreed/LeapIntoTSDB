@@ -61,7 +61,10 @@ public class MongoService {
 
         Document group1 = new Document(ID, 
             new Document("symbol", "$" + SYMBOL)
-                .append("date", new Document("$dateTrunc", new Document("date", "$" + TIMESTAMP).append("unit", "hour").append("timezone", "America/Sao_Paulo"))))
+                .append("date", new Document("$dateTrunc", new Document("date", "$" + TIMESTAMP)
+                    .append("unit", dadosPipeline.getGran())
+                    .append("binSize", dadosPipeline.getBin())
+                    .append("timezone", "America/Sao_Paulo"))))
             .append("averageValue", new Document("$avg", "$value"))
             .append("total", new Document("$count", new Document()));
 
