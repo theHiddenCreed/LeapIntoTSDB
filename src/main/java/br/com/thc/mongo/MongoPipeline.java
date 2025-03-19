@@ -10,6 +10,7 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 
 import br.com.thc.modelos.DadosSaidaPipeline;
+import io.quarkus.logging.Log;
 
 public class MongoPipeline {
 
@@ -75,12 +76,17 @@ public class MongoPipeline {
 
 		public DadosSaidaPipeline execute(int page, int limit) {
 			MongoCollection<Document> mongoCollection = mongoClient.getDatabase(database).getCollection(collection);
+			int total = 0;
 
 			List<Document> pipelineCount = new ArrayList<>();
 			pipelineCount.addAll(pipeline);
 			pipelineCount.add(new Document("$count", "total"));
 			AggregateIterable<Document> resultCount = mongoCollection.aggregate(pipelineCount);
-			int total = resultCount.first().getInteger("total");
+			try {
+				total = resultCount.first().getInteger("total");
+			} catch (NullPointerException e) {
+				Log.warn("Consulta vazia: " + e.getMessage());
+			}
 
 			if (limit > 100) {
 				throw new LimiteExcedidoException("Limite excedido, valor recomendado é 100.");
@@ -88,13 +94,17 @@ public class MongoPipeline {
 
 			if (limit > total) {
 				pipeline.add(new Document("$skip", 0 * limit));
-				pipeline.add(new Document("$limit", total));
+				if (total > 0) {
+					pipeline.add(new Document("$limit", total));
+				} else {
+					pipeline.add(new Document("$limit", 1));
+				}
 
 				AggregateIterable<Document> result = mongoCollection.aggregate(pipeline);
 				List<Document> documents = new ArrayList<>();
 				result.forEach(documents::add);
 	
-				return new DadosSaidaPipeline(total, 0, documents);
+				return new DadosSaidaPipeline(total, 1, documents);
 			} else {
 				pipeline.add(new Document("$skip", (page - 1) * limit));
 				pipeline.add(new Document("$limit", limit));

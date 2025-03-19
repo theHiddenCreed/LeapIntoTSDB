@@ -13,6 +13,7 @@ import com.mongodb.client.MongoClient;
 import br.com.thc.modelos.DadosEntradaPipeline;
 import br.com.thc.modelos.DadosSaidaPipeline;
 import br.com.thc.mongo.MongoPipeline;
+import io.vertx.codegen.doc.Doc;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 
@@ -60,19 +61,24 @@ public class MongoService {
 
         Document group1 = new Document(ID, 
             new Document("symbol", "$" + SYMBOL)
-                .append("day", new Document("$dayOfMonth", "$" + TIMESTAMP))
-                .append("month", new Document("$month", "$" + TIMESTAMP))
-                .append("hour", new Document("$hour", "$" + TIMESTAMP)))
+                .append("date", new Document("$dateTrunc", new Document("date", "$" + TIMESTAMP).append("unit", "hour").append("timezone", "America/Sao_Paulo"))))
             .append("averageValue", new Document("$avg", "$value"))
             .append("total", new Document("$count", new Document()));
 
-        Document sort = new Document("_id.hour", 1L);
+        Document project = new Document("symbol", "$_id.symbol")
+            .append("date", "$_id.date")
+            .append(ID, 0)
+            .append("averageValue", 1)
+            .append("total", 1);
+
+        Document sort = new Document("date", 1L);
 
         return MongoPipeline.builder(mongoClient)
             .setDatabase(MONGODB_DATABASE)
             .setCollection(MONGO_COLLECTION)
             .addMatch(filter)
             .addGroup(group1)
+            .addProject(project)
             .addSort(sort)
             // .addGroup(group2)
             // .addProject(format)
