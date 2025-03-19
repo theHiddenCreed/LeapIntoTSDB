@@ -42,7 +42,7 @@ public class PricesResource {
     }
 
     @GET
-    @Path("/media-hora")
+    @Path("/media")
     @Produces(MediaType.APPLICATION_JSON)
     public DadosSaidaPipeline diff(
         @RestQuery("symbol") String symbol, 
