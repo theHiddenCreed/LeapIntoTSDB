@@ -52,6 +52,8 @@ for i in symbols:
 
     URL = f'''{BASE_URL}symbol=BOV%5E{i}&frequency={FREQUENCY_MINUTES}&resolution={RESOLUTION}&to={to}&volume={VOLUME}&afterhours={AFTER_HOURS}&errorMode={ERROR_MODE}'''
 
+    print(datetime.now())
+
     data = requests.get(
         URL, 
         headers={
@@ -62,4 +64,4 @@ for i in symbols:
 
     db = Database('LeapIntoTSDBApi')
 
-    db.insert('pricesVolume', format_doc(i, data.json()))
+    db.insert('stocks', format_doc(i, data.json()))
