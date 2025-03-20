@@ -66,12 +66,6 @@
             <artifactId>quarkus-smallrye-jwt-build</artifactId>
         </dependency>
 
-        <!-- Cache -->
-        <dependency>
-            <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-cache</artifactId>
-        </dependency>
-
         <!-- MongoDB -->
         <dependency>
             <groupId>io.quarkus</groupId>
