@@ -39,8 +39,11 @@ public class MongoService {
 
     public DadosSaidaPipeline retornaDados(DadosEntradaPipeline dadosPipeline) throws ParseException {
         Document filter = new Document(TYPE, dadosPipeline.getType())
-            .append(SYMBOL, dadosPipeline.getSymbol())
             .append(TIMESTAMP, new Document("$gte", date(dadosPipeline.getStart())).append("$lte", date(dadosPipeline.getEnd())));
+
+        if (dadosPipeline.getSymbol() != null) {
+            filter.append(SYMBOL, dadosPipeline.getSymbol());
+        } 
 
         Document group = new Document(ID, 
             new Document("symbol", "$" + SYMBOL)
