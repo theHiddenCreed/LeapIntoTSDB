@@ -51,7 +51,7 @@ public class MongoService {
             .append("avg", new Document("$avg", VALUE))
             .append("min", new Document("$min", VALUE))
             .append("max", new Document("$max", VALUE))
-            .append("median", new Document("$media", new Document("input", VALUE).append("method", "approximate")))
+            .append("median", new Document("$median", new Document("input", VALUE).append("method", "approximate")))
             .append("n", new Document("$count", new Document()));
 
         Document project = new Document("symbol", "$_id.symbol")
@@ -79,7 +79,6 @@ public class MongoService {
     private Date date(String date) throws ParseException {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         long epochTime = dateFormat.parse(date).getTime() - GMT;
-        log.info(epochTime);
         return new Date(epochTime);
     }
 
