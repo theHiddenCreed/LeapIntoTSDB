@@ -26,37 +26,23 @@ public class PricesResource {
     Logger log;
 
     @GET
-    @Path("bruto")
-    @Produces(MediaType.APPLICATION_JSON)
-    public DadosSaidaPipeline filtro(
-        @RestQuery("symbol") String symbol, 
-        @RestQuery("type") String type, 
-        @RestQuery("start") String start, 
-        @RestQuery("end") String end, 
-        @RestQuery("page") int page, 
-        @RestQuery("limit") int limit
-    ) throws ParseException {
-        DadosEntradaPipeline dadosPipeline = new DadosEntradaPipeline(symbol, type, start, end, limit, page, "", 0);
-        log.info(dadosPipeline);
-        return mongoService.filterByDateMetricSymbol(dadosPipeline);
-    }
-
-    @GET
-    @Path("/media")
+    @Path("")
     @Produces(MediaType.APPLICATION_JSON)
     public DadosSaidaPipeline diff(
-        @RestQuery("symbol") String symbol, 
-        @RestQuery("type") String type, 
-        @RestQuery("start") String start, 
-        @RestQuery("end") String end, 
-        @RestQuery("page") int page, 
-        @RestQuery("limit") int limit,
-        @RestQuery("gran") String gran,
-        @RestQuery("bin") int bin
+        @RestQuery("symbol") String symbol, @RestQuery("type") String type, 
+        @RestQuery("start") String start, @RestQuery("end") String end, 
+        @RestQuery("gran") String gran, @RestQuery("bin") int bin,
+        @RestQuery("page") int page, @RestQuery("limit") int limit
     ) throws ParseException {
-        DadosEntradaPipeline dadosPipeline = new DadosEntradaPipeline(symbol, type, start, end, limit, page, gran, bin);
+        DadosEntradaPipeline dadosPipeline = DadosEntradaPipeline.builder()
+            .symbol(symbol).type(type).start(start).end(end) // filtros
+            .gran(gran).bin(bin) // agrupamentos
+            .page(page).limit(limit) // limites
+            .build();
+
         log.info(dadosPipeline);
-        return mongoService.filterCalcDiff(dadosPipeline);
+
+        return mongoService.retornaDados(dadosPipeline);
     }
 
 }
