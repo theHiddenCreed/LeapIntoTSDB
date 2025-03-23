@@ -49,13 +49,12 @@ public class PricesResource {
     public DadosSaidaPipeline paginacao(
         @RestQuery("symbol") String symbol, @RestQuery("type") String type, 
         @RestQuery("start") String start, @RestQuery("end") String end, 
-        @RestQuery("gran") String gran, @RestQuery("bin") int bin,
-        @RestQuery("page") int page, @RestQuery("limit") int limit
+        @RestQuery("gran") String gran, @RestQuery("bin") int bin, @RestQuery("limit") int limit
     ) {
         DadosEntradaPipeline dadosPipeline = DadosEntradaPipeline.builder()
             .symbol(symbol).type(type).start(start).end(end) // filtros
             .gran(gran).bin(bin) // agrupamentos
-            .page(page).limit(limit) // limites
+            .limit(limit) // limites
             .build();
 
         log.info(dadosPipeline);
