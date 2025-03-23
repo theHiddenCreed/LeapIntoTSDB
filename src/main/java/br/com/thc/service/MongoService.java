@@ -1,7 +1,6 @@
 package br.com.thc.service;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 
 import org.bson.Document;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -51,7 +50,7 @@ public class MongoService {
                     .append("binSize", dadosPipeline.getBin())
                     .append("timezone", "America/Sao_Paulo"))))
             .append("avg", new Document("$avg", VALUE))
-            .append("sd", new Document("$stdDevSamp", VALUE))
+            .append("sd", new Document("$stdDevPop", VALUE))
             .append("min", new Document("$min", VALUE))
             .append("max", new Document("$max", VALUE))
             .append("n", new Document("$count", new Document()));
