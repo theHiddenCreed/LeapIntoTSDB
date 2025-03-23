@@ -1,8 +1,7 @@
 package br.com.thc.service;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 import org.bson.Document;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -27,8 +26,6 @@ public class MongoService {
     private static final String ID = "_id";
     private static final String VALUE = "$value";
 
-    private static final long GMT = 10800000L;
-
     private static final String MONGO_COLLECTION = "stocks";
 
     @Inject
@@ -37,33 +34,35 @@ public class MongoService {
     @Inject
     Logger log;
 
-    public DadosSaidaPipeline retornaDados(DadosEntradaPipeline dadosPipeline) throws ParseException {
+    public DadosSaidaPipeline retornaDados(DadosEntradaPipeline dadosPipeline, boolean withDocs) {
         Document filter = new Document(TYPE, dadosPipeline.getType())
-            .append(TIMESTAMP, new Document("$gte", date(dadosPipeline.getStart())).append("$lte", date(dadosPipeline.getEnd())));
+            .append(TIMESTAMP, 
+                new Document("$gte", Instant.parse(dadosPipeline.getStart()))
+                    .append("$lte", Instant.parse(dadosPipeline.getEnd())));
 
         if (dadosPipeline.getSymbol() != null) {
             filter.append(SYMBOL, dadosPipeline.getSymbol());
         } 
 
-        Document group = new Document(ID, 
+        Document group = new Document(ID,
             new Document("symbol", "$" + SYMBOL)
                 .append("date", new Document("$dateTrunc", new Document("date", "$" + TIMESTAMP)
                     .append("unit", dadosPipeline.getGran())
                     .append("binSize", dadosPipeline.getBin())
                     .append("timezone", "America/Sao_Paulo"))))
             .append("avg", new Document("$avg", VALUE))
+            .append("sd", new Document("$stdDevSamp", VALUE))
             .append("min", new Document("$min", VALUE))
             .append("max", new Document("$max", VALUE))
-            .append("median", new Document("$median", new Document("input", VALUE).append("method", "approximate")))
             .append("n", new Document("$count", new Document()));
 
         Document project = new Document("symbol", "$_id.symbol")
             .append("date", "$_id.date")
             .append(ID, 0)
             .append("avg", 1)
+            .append("sd", 1)
             .append("min", 1)
             .append("max", 1)
-            .append("median", 1)
             .append("n", 1);
 
         Document sort = new Document("date", 1L);
@@ -75,14 +74,8 @@ public class MongoService {
             .addGroup(group)
             .addProject(project)
             .addSort(sort)
-            .execute(dadosPipeline.getPage(), dadosPipeline.getLimit());
+            .execute(dadosPipeline.getPage(), dadosPipeline.getLimit(), withDocs);
 
-    }
-
-    private Date date(String date) throws ParseException {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-        long epochTime = dateFormat.parse(date).getTime() - GMT;
-        return new Date(epochTime);
     }
 
 }

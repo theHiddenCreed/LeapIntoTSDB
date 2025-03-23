@@ -1,7 +1,5 @@
 package br.com.thc.rest;
 
-import java.text.ParseException;
-
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.reactive.RestQuery;
 
@@ -26,14 +24,14 @@ public class PricesResource {
     Logger log;
 
     @GET
-    @Path("")
+    @Path("/docs")
     @Produces(MediaType.APPLICATION_JSON)
-    public DadosSaidaPipeline diff(
+    public DadosSaidaPipeline docs(
         @RestQuery("symbol") String symbol, @RestQuery("type") String type, 
         @RestQuery("start") String start, @RestQuery("end") String end, 
         @RestQuery("gran") String gran, @RestQuery("bin") int bin,
         @RestQuery("page") int page, @RestQuery("limit") int limit
-    ) throws ParseException {
+    ) {
         DadosEntradaPipeline dadosPipeline = DadosEntradaPipeline.builder()
             .symbol(symbol).type(type).start(start).end(end) // filtros
             .gran(gran).bin(bin) // agrupamentos
@@ -42,7 +40,27 @@ public class PricesResource {
 
         log.info(dadosPipeline);
 
-        return mongoService.retornaDados(dadosPipeline);
+        return mongoService.retornaDados(dadosPipeline, true);
+    }
+
+    @GET
+    @Path("/pagination")
+    @Produces(MediaType.APPLICATION_JSON)
+    public DadosSaidaPipeline paginacao(
+        @RestQuery("symbol") String symbol, @RestQuery("type") String type, 
+        @RestQuery("start") String start, @RestQuery("end") String end, 
+        @RestQuery("gran") String gran, @RestQuery("bin") int bin,
+        @RestQuery("page") int page, @RestQuery("limit") int limit
+    ) {
+        DadosEntradaPipeline dadosPipeline = DadosEntradaPipeline.builder()
+            .symbol(symbol).type(type).start(start).end(end) // filtros
+            .gran(gran).bin(bin) // agrupamentos
+            .page(page).limit(limit) // limites
+            .build();
+
+        log.info(dadosPipeline);
+
+        return mongoService.retornaDados(dadosPipeline, false);
     }
 
 }

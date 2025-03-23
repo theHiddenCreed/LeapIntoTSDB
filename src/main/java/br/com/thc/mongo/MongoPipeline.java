@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.bson.Document;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 import com.mongodb.client.AggregateIterable;
 import com.mongodb.client.MongoClient;
@@ -14,12 +15,16 @@ import io.quarkus.logging.Log;
 
 public class MongoPipeline {
 
+	private static final int QUERY_LIMIT = ConfigProvider.getConfig().getValue("QUERY_LIMIT", Integer.class);
+
 	private MongoPipeline() {}
 
 	public static PipelineBuilder builder(MongoClient client) {
 		return new PipelineBuilder(client);
 	}
 	public static class PipelineBuilder {
+
+		private static final String FIELD_LIMIT = "$limit";
 		private MongoClient mongoClient;
 		private String database;
 		private String collection;
@@ -74,7 +79,7 @@ public class MongoPipeline {
 			return this;
 		}
 
-		public DadosSaidaPipeline execute(int page, int limit) {
+		public DadosSaidaPipeline execute(int page, int limit, boolean withDocs) {
 			MongoCollection<Document> mongoCollection = mongoClient.getDatabase(database).getCollection(collection);
 			int total = 0;
 
@@ -82,38 +87,49 @@ public class MongoPipeline {
 			pipelineCount.addAll(pipeline);
 			pipelineCount.add(new Document("$count", "total"));
 			AggregateIterable<Document> resultCount = mongoCollection.aggregate(pipelineCount);
+			
 			try {
 				total = resultCount.first().getInteger("total");
 			} catch (NullPointerException e) {
 				Log.warn("Consulta vazia: " + e.getMessage());
 			}
 
-			if (limit > 100) {
-				throw new LimiteExcedidoException("Limite excedido, valor recomendado é 100.");
+			if (limit > QUERY_LIMIT) {
+				throw new LimiteExcedidoException("Limite excedido, valor recomendado é " + QUERY_LIMIT);
 			} 
 
-			if (limit > total) {
-				pipeline.add(new Document("$skip", 0 * limit));
-				if (total > 0) {
-					pipeline.add(new Document("$limit", total));
+			int totalPaginas = Math.floorDiv(total, limit);
+
+			if (totalPaginas < (total * limit)) {
+				totalPaginas += 1;
+			}
+
+			if (withDocs) {
+				if (limit > total) {
+					pipeline.add(new Document("$skip", 0 * limit));
+					if (total > 0) {
+						pipeline.add(new Document(FIELD_LIMIT, total));
+					} else {
+						pipeline.add(new Document(FIELD_LIMIT, 1));
+					}
+	
+					AggregateIterable<Document> result = mongoCollection.aggregate(pipeline);
+					List<Document> documents = new ArrayList<>();
+					result.forEach(documents::add);
+		
+					return new DadosSaidaPipeline(total, totalPaginas, 1, documents);
 				} else {
-					pipeline.add(new Document("$limit", 1));
+					pipeline.add(new Document("$skip", (page - 1) * limit));
+					pipeline.add(new Document(FIELD_LIMIT, limit));
+	
+					AggregateIterable<Document> result = mongoCollection.aggregate(pipeline);
+					List<Document> documents = new ArrayList<>();
+					result.forEach(documents::add);
+		
+					return new DadosSaidaPipeline(total, totalPaginas, page, documents);
 				}
-
-				AggregateIterable<Document> result = mongoCollection.aggregate(pipeline);
-				List<Document> documents = new ArrayList<>();
-				result.forEach(documents::add);
-	
-				return new DadosSaidaPipeline(total, 1, documents);
 			} else {
-				pipeline.add(new Document("$skip", (page - 1) * limit));
-				pipeline.add(new Document("$limit", limit));
-
-				AggregateIterable<Document> result = mongoCollection.aggregate(pipeline);
-				List<Document> documents = new ArrayList<>();
-				result.forEach(documents::add);
-	
-				return new DadosSaidaPipeline(total, page, documents);
+				return new DadosSaidaPipeline(total, totalPaginas, page, new ArrayList<>());
 			}
 		}
 	}
